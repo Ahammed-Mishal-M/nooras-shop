@@ -1,0 +1,165 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+    <!-- HERO SECTION (Kept Exactly as you requested) -->
+    <section class="container mx-auto mt-8 mb-16 px-4">
+        <div class="flex flex-col md:flex-row items-center">
+            <div class="w-full md:w-1/2 text-center md:text-left pr-0 md:pr-10">
+                <h1 class="text-6xl lg:text-8xl page-heading font-bold text-gray-800 leading-none">NOORA'S</h1>
+                <p class="text-xl lg:text-2xl text-gray-700 mt-4 tracking-widest page-heading">DRESS THE MOMENT</p>
+                <h2 class="text-3xl lg:text-4xl page-heading font-bold text-gray-800 mb-4 mt-10">FROM NOORA'S, <br> WITH LOVE</h2>
+                <p class="text-gray-600 mb-6 max-w-sm mx-auto md:mx-0">
+                    Noora's brings you curated fashion that speaks grace, comfort, and culture.
+                </p>
+                <a href="#featured" class="inline-block bg-[#00695C] hover:bg-[#004D40] text-white font-semibold py-3 px-8 rounded-md transition duration-300">
+                    DISCOVER
+                </a>
+            </div>
+            <div class="w-full md:w-1/2 mt-12 md:mt-0 relative">
+                <div class="absolute top-0 left-10 w-20 h-20 bg-gray-200 rounded-full opacity-60 z-0"></div>
+                <div class="absolute -top-5 right-10 w-24 h-24 bg-green-200 rounded-full opacity-40 z-0"></div>
+                <!-- Make sure these static files exist in your project -->
+                <img src="{% static 'hero-leaf-dark-bg.png' %}" class="absolute top-0 right-0 w-32 opacity-70 rotate-12 z-0" alt="Abstract Leaf" onerror="this.style.display='none'">
+                <div class="flex justify-center space-x-4 relative z-10">
+                    <img src="{% static 'hero-women-left.jpg' %}" alt="Noora's Collection" class="w-5/12 h-[300px] sm:h-[450px] object-cover rounded-lg shadow-lg transform translate-y-4" onerror="this.src='https://images.unsplash.com/photo-1618932260643-2b67c56e374d?q=80&w=600&auto=format&fit=crop'">
+                    <img src="{% static 'hero-women-right.jpg' %}" alt="Noora's Collection" class="w-5/12 h-[300px] sm:h-[450px] object-cover rounded-lg shadow-lg transform -translate-y-4" onerror="this.src='https://images.unsplash.com/photo-1583391726247-825019273119?q=80&w=600&auto=format&fit=crop'">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SHOP BY CATEGORY (Kept Exactly as you requested) -->
+    <section class="container mx-auto my-16 px-4">
+        <h2 class="text-3xl page-heading font-bold text-gray-900 mb-8 text-center">SHOP BY CATEGORY</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+
+            <a href="{% url 'category_detail' 'western-wears' %}"
+               class="group relative rounded-lg overflow-hidden shadow-sm flex flex-col justify-center items-center p-10 text-center bg-blue-50 transition duration-300 hover:shadow-lg hover:bg-blue-100 border border-blue-100">
+
+                <i class="fa-solid fa-vest-patches text-4xl sm:text-5xl text-[#00695C] mb-4"></i>
+                <h3 class="text-xl sm:text-2xl font-bold page-heading text-blue-900">Western Wears</h3>
+                <p class="text-blue-700 text-sm sm:text-base mt-1">Modern & Stylish</p>
+
+                <div class="absolute inset-0 group-hover:bg-black group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+                    <span class="text-white text-lg font-bold page-heading opacity-0 group-hover:opacity-100 transition-opacity">SHOP NOW</span>
+                </div>
+            </a>
+
+            <a href="{% url 'category_detail' 'party-wears' %}"
+               class="group relative rounded-lg overflow-hidden shadow-sm flex flex-col justify-center items-center p-10 text-center bg-rose-50 transition duration-300 hover:shadow-lg hover:bg-rose-100 border border-rose-100">
+
+                <i class="fa-solid fa-star text-4xl sm:text-5xl text-[#00695C] mb-4"></i>
+                <h3 class="text-xl sm:text-2xl font-bold page-heading text-rose-900">Party Wears</h3>
+                <p class="text-rose-700 text-sm sm:text-base mt-1">Dazzling & Elegant</p>
+
+                <div class="absolute inset-0 group-hover:bg-black group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+                    <span class="text-white text-lg font-bold page-heading opacity-0 group-hover:opacity-100 transition-opacity">SHOP NOW</span>
+                </div>
+            </a>
+
+            <a href="{% url 'category_detail' 'casual-wears' %}"
+               class="group relative rounded-lg overflow-hidden shadow-sm flex flex-col justify-center items-center p-10 text-center bg-sky-50 transition duration-300 hover:shadow-lg hover:bg-sky-100 border border-sky-100">
+
+                <i class="fa-solid fa-leaf text-4xl sm:text-5xl text-[#00695C] mb-4"></i>
+                <h3 class="text-xl sm:text-2xl font-bold page-heading text-sky-900">Casual Wears</h3>
+                <p class="text-sky-700 text-sm sm:text-base mt-1">Comfortable & Chic</p>
+
+                <div class="absolute inset-0 group-hover:bg-black group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+                    <span class="text-white text-lg font-bold page-heading opacity-0 group-hover:opacity-100 transition-opacity">SHOP NOW</span>
+                </div>
+            </a>
+
+            <a href="{% url 'category_detail' 'premium-section' %}"
+               class="group relative rounded-lg overflow-hidden shadow-sm flex flex-col justify-center items-center p-10 text-center bg-amber-50 transition duration-300 hover:shadow-lg hover:bg-amber-100 border border-amber-100">
+
+                <i class="fa-solid fa-gem text-4xl sm:text-5xl text-[#00695C] mb-4"></i>
+                <h3 class="text-xl sm:text-2xl font-bold page-heading text-amber-900">Premium Section</h3>
+                <p class="text-amber-700 text-sm sm:text-base mt-1">Our exclusive premium wears</p>
+
+                <div class="absolute inset-0 group-hover:bg-black group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+                    <span class="text-white text-lg font-bold page-heading opacity-0 group-hover:opacity-100 transition-opacity">SHOP NOW</span>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- OUR FEATURED COLLECTION (Modified for Professional Look) -->
+    <section id="featured" class="container mx-auto my-16 px-4">
+
+        <!-- Section Header -->
+        <div class="text-center mb-12">
+            <p class="text-[#00695C] font-semibold tracking-[0.2em] text-sm mb-2 uppercase">Handpicked Favorites</p>
+            <h2 class="text-3xl lg:text-4xl page-heading font-bold text-gray-900">OUR FEATURED COLLECTION</h2>
+            <div class="w-16 h-1 bg-[#00695C] mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        {% if products %}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+                {% for product in products %}
+                <div class="group relative bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-xl transition-shadow duration-300">
+
+                    <div class="relative overflow-hidden">
+                        <a href="{% url 'product_detail' product.slug %}">
+                            {% if product.thumbnail %}
+                                <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="w-full h-80 md:h-96 object-cover transition-transform duration-500 group-hover:scale-110">
+                            {% else %}
+                                <div class="w-full h-80 md:h-96 bg-gray-100 flex items-center justify-center text-gray-400">No Image</div>
+                            {% endif %}
+                        </a>
+
+                        <!-- Sale Badge -->
+                        <!-- Logic: You can add logic here later to only show SALE if price is discounted -->
+                        <!-- <div class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-sm">SALE</div> -->
+
+                        <!-- Quick Action Icons -->
+                        <div class="absolute top-3 right-3 flex flex-col space-y-2 translate-x-10 group-hover:translate-x-0 transition-transform duration-300">
+                            <a href="{% url 'product_detail' product.slug %}" class="bg-white p-2 rounded-full shadow-md text-gray-700 hover:bg-[#00695C] hover:text-white transition-colors duration-300">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                        </div>
+
+                        <!-- View Options Button Slide-up -->
+                        <div class="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            {% if product.total_stock > 0 %}
+                                <a href="{% url 'product_detail' product.slug %}" class="block w-full bg-white bg-opacity-95 text-gray-900 font-bold py-3 text-center text-sm tracking-wide hover:bg-[#00695C] hover:text-white transition-colors shadow-lg rounded-sm border border-gray-100">
+                                    VIEW OPTIONS
+                                </a>
+                            {% else %}
+                                <button disabled class="block w-full bg-gray-800 text-white font-bold py-3 text-center text-sm tracking-wide cursor-not-allowed rounded-sm">
+                                    SOLD OUT
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="p-4 text-center">
+                        <h3 class="text-base page-heading font-semibold text-gray-800 mb-2 truncate">{{ product.name }}</h3>
+
+                        {% if product.min_price %}
+                            <span class="text-lg font-bold text-[#00695C]">₹{{ product.min_price|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="text-lg font-bold text-gray-400">Unavailable</span>
+                        {% endif %}
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+        {% else %}
+            <div class="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                <i class="fa-regular fa-star text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 font-medium text-lg">New featured styles dropping soon.</p>
+                <p class="text-gray-400 text-sm mt-1">Check back later for updates!</p>
+            </div>
+        {% endif %}
+    </section>
+
+{% endblock %}

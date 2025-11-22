@@ -1,0 +1,185 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-10">
+
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Secure Payment</h1>
+        <p class="text-gray-500 mt-2">Complete your purchase securely</p>
+    </div>
+
+    <div class="max-w-md w-full bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
+
+        <div class="bg-gray-900 px-6 py-6 text-white flex justify-between items-center">
+            <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Total to Pay</p>
+                <h2 class="font-bold text-2xl">₹{{ order.order_total }}</h2>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Order ID</p>
+                <p class="font-mono font-medium">{{ order.order_id }}</p>
+            </div>
+        </div>
+
+        <div class="p-8 relative min-h-[300px]">
+
+            {% if is_simulation %}
+
+                <div class="bg-yellow-50 border border-yellow-200 p-3 rounded mb-6 text-xs text-yellow-800 text-center">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Demo Mode:</strong> Use the UPI tab to simulate success.
+                </div>
+
+                <div class="flex border-b border-gray-200 mb-6">
+                    <button onclick="switchTab('upi')" id="tab-upi" class="w-1/3 py-2 font-semibold text-sm border-b-2 border-black text-black bg-gray-50">UPI</button>
+                    <button onclick="switchTab('card')" id="tab-card" class="w-1/3 py-2 font-semibold text-sm border-b-2 border-transparent text-gray-500">Card</button>
+                    <button onclick="switchTab('netbanking')" id="tab-netbanking" class="w-1/3 py-2 font-semibold text-sm border-b-2 border-transparent text-gray-500">Netbanking</button>
+                </div>
+
+                <div id="view-upi" class="space-y-6 fade-in">
+                    <div class="text-center mb-4">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                            <i class="fa-solid fa-mobile-screen text-gray-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900">Pay via UPI App</h3>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Enter UPI ID</label>
+                        <input type="text" id="upi-id" value="success@razorpay" class="w-full border border-gray-300 rounded px-4 py-3">
+                    </div>
+                    <button onclick="startUpiSimulation()" class="w-full bg-black text-white font-bold py-3 rounded hover:bg-gray-800 transition">
+                        Verify & Pay ₹{{ order.order_total }}
+                    </button>
+                </div>
+
+                <div id="view-card" class="hidden space-y-5 fade-in">
+                    <p class="text-center text-sm text-gray-500">Card payments are disabled in Demo Mode.</p>
+                </div>
+
+                <div id="view-netbanking" class="hidden space-y-6 fade-in">
+                     <p class="text-center text-sm text-gray-500">Netbanking is disabled in Demo Mode.</p>
+                </div>
+
+                <form action="{{ callback_url }}" method="POST" id="hidden-form" class="hidden">
+                    {% csrf_token %}
+                    <input type="hidden" name="razorpay_payment_id" value="pay_simulated_123456">
+                    <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+                    <input type="hidden" name="razorpay_signature" value="simulated_success">
+                </form>
+
+            {% else %}
+
+                <div class="text-center space-y-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#00695C] bg-opacity-10 mb-2">
+                        <i class="fa-solid fa-shield-halved text-[#00695C] text-3xl"></i>
+                    </div>
+
+                    <h3 class="font-bold text-xl text-gray-900">Secure Checkout</h3>
+                    <p class="text-gray-600 text-sm">
+                        You will be redirected to Razorpay's secure payment gateway to complete your transaction.
+                    </p>
+
+                    <button id="rzp-button1" class="w-full bg-[#00695C] hover:bg-[#004D40] text-white font-bold py-4 rounded-md transition transform active:scale-95 flex items-center justify-center gap-2 shadow-lg">
+                        Pay ₹{{ order.order_total }} Now
+                    </button>
+
+                    <div class="flex justify-center space-x-3 text-gray-400 text-2xl pt-4">
+                        <i class="fa-brands fa-cc-visa"></i>
+                        <i class="fa-brands fa-cc-mastercard"></i>
+                        <i class="fa-brands fa-google-pay"></i>
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                </div>
+
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                <script>
+                var options = {
+                    "key": "{{ razorpay_merchant_key }}",
+                    "amount": "{{ razorpay_amount }}",
+                    "currency": "{{ currency }}",
+                    "name": "Noora's Ladies Wear",
+                    "description": "Order #{{ order.order_id }}",
+                    "image": "{% static 'logo.png' %}",
+                    "order_id": "{{ razorpay_order_id }}",
+                    "callback_url": "{{ callback_url }}",
+                    "prefill": {
+                        "name": "{{ order.full_name }}",
+                        "email": "{{ order.email }}",
+                        "contact": "{{ order.phone }}"
+                    },
+                    "theme": {
+                        "color": "#00695C"
+                    }
+                };
+                var rzp1 = new Razorpay(options);
+                document.getElementById('rzp-button1').onclick = function(e){
+                    rzp1.open();
+                    e.preventDefault();
+                }
+                </script>
+
+            {% endif %}
+
+            <div id="loading-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center hidden z-50 rounded-b-lg">
+                <div class="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+                <h3 id="loading-text" class="text-lg font-bold text-gray-900 mt-6">Processing Payment</h3>
+                <p id="loading-subtext" class="text-sm text-gray-500 mt-2">Please do not close this window</p>
+            </div>
+
+        </div>
+
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+            <div class="flex items-center text-gray-400 text-xs">
+                <i class="fa-solid fa-lock mr-1"></i> 100% Secure Payment
+            </div>
+            <a href="{% url 'checkout' %}" class="text-sm font-medium text-gray-500 hover:text-black transition">Cancel</a>
+        </div>
+    </div>
+</div>
+
+{% if is_simulation %}
+<script>
+    function switchTab(tabName) {
+        document.getElementById('view-upi').classList.add('hidden');
+        document.getElementById('view-card').classList.add('hidden');
+        document.getElementById('view-netbanking').classList.add('hidden');
+
+        const tabs = ['upi', 'card', 'netbanking'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('tab-' + t);
+            btn.classList.remove('border-black', 'text-black', 'bg-gray-50');
+            btn.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        document.getElementById('view-' + tabName).classList.remove('hidden');
+        const activeBtn = document.getElementById('tab-' + tabName);
+        activeBtn.classList.remove('border-transparent', 'text-gray-500');
+        activeBtn.classList.add('border-black', 'text-black', 'bg-gray-50');
+    }
+
+    function startUpiSimulation() {
+        const upiId = document.getElementById('upi-id').value;
+        if(!upiId.includes('@')) {
+            alert("Please enter a valid UPI ID");
+            return;
+        }
+        const overlay = document.getElementById('loading-overlay');
+        const text = document.getElementById('loading-text');
+        const subtext = document.getElementById('loading-subtext');
+
+        overlay.classList.remove('hidden');
+        text.innerText = "Check your Phone";
+        subtext.innerText = "Request sent to " + upiId;
+
+        setTimeout(() => {
+            text.innerText = "Payment Approved!";
+            subtext.innerText = "Confirming...";
+            setTimeout(() => {
+                document.getElementById('hidden-form').submit();
+            }, 1500);
+        }, 3000);
+    }
+</script>
+{% endif %}
+
+{% endblock %}

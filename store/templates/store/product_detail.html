@@ -1,0 +1,300 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<script type="application/json" id="variants-data">
+    {{ variants_data_json|safe }}
+</script>
+
+<script>
+    function productVariantSelector() {
+        return {
+            variantsData: [],
+            selectedColor: null,
+            selectedSize: null,
+            selectedVariant: {},
+            // Desktop only: Main image state
+            mainImage: '{{ product.thumbnail.url|default:"/static/placeholder.png" }}',
+
+            initialize() {
+                const dataElement = document.getElementById('variants-data');
+                try {
+                    this.variantsData = JSON.parse(dataElement.textContent);
+                } catch (e) {
+                    console.error("Error parsing variant data", e);
+                    this.variantsData = [];
+                }
+
+                // Auto-select if only 1 option exists
+                if ({{ available_colors|length }} === 1) {
+                    this.selectedColor = '{{ available_colors.0.name }}';
+                }
+                if ({{ available_sizes|length }} === 1) {
+                    this.selectedSize = '{{ available_sizes.0.name }}';
+                }
+                this.attemptFindVariant();
+            },
+
+            selectColor(colorName) {
+                this.selectedColor = colorName;
+                this.attemptFindVariant();
+            },
+
+            selectSize(sizeName) {
+                this.selectedSize = sizeName;
+                this.attemptFindVariant();
+            },
+
+            attemptFindVariant() {
+                let canFind = true;
+                if ({{ available_colors|length }} > 0 && !this.selectedColor) {
+                    canFind = false;
+                }
+                if ({{ available_sizes|length }} > 0 && !this.selectedSize) {
+                    canFind = false;
+                }
+
+                if (canFind) {
+                    this.findVariant();
+                } else {
+                    this.selectedVariant = {};
+                }
+            },
+
+            findVariant() {
+                let found = this.variantsData.find(v => {
+                    let colorMatch = true;
+                    let sizeMatch = true;
+
+                    if ({{ available_colors|length }} > 0) {
+                        colorMatch = v.color__name === this.selectedColor;
+                    }
+                    if ({{ available_sizes|length }} > 0) {
+                        sizeMatch = v.size__name === this.selectedSize;
+                    }
+
+                    return colorMatch && sizeMatch;
+                });
+
+                if (found) {
+                    this.selectedVariant = found;
+                } else {
+                    this.selectedVariant = { id: null, price: 'N/A', stock: 0 };
+                }
+            }
+        }
+    }
+</script>
+
+<section class="container mx-auto my-0 md:my-12 px-0 md:px-4"
+         x-data="productVariantSelector()"
+         x-init="initialize()">
+
+    <div class="flex flex-col md:flex-row gap-8 md:gap-12">
+
+        <div class="w-full md:w-1/2">
+
+            <div class="md:hidden relative w-full">
+                <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full aspect-[2/3]">
+
+                    {% if product.thumbnail %}
+                    <div class="flex-shrink-0 w-full h-full snap-center">
+                        <img src="{{ product.thumbnail.url }}" class="w-full h-full object-cover">
+                    </div>
+                    {% endif %}
+
+                    {% for img in images %}
+                    <div class="flex-shrink-0 w-full h-full snap-center">
+                        <img src="{{ img.image.url }}" class="w-full h-full object-cover">
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                    <div class="bg-black bg-opacity-20 px-3 py-1 rounded-full text-[10px] text-white backdrop-blur-sm">
+                        Swipe for more
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden md:flex flex-row gap-4">
+                <div class="flex flex-col gap-3 h-[600px] overflow-y-auto no-scrollbar py-1">
+                    {% if product.thumbnail %}
+                    <img src="{{ product.thumbnail.url }}"
+                         class="w-20 h-24 object-cover rounded-lg cursor-pointer border-2 transition-all duration-200"
+                         :class="mainImage === '{{ product.thumbnail.url }}' ? 'border-black opacity-100' : 'border-transparent opacity-70 hover:opacity-100'"
+                         @click="mainImage = '{{ product.thumbnail.url }}'">
+                    {% endif %}
+
+                    {% for img in images %}
+                    <img src="{{ img.image.url }}"
+                         class="w-20 h-24 object-cover rounded-lg cursor-pointer border-2 transition-all duration-200"
+                         :class="mainImage === '{{ img.image.url }}' ? 'border-black opacity-100' : 'border-transparent opacity-70 hover:opacity-100'"
+                         @click="mainImage = '{{ img.image.url }}'">
+                    {% endfor %}
+                </div>
+
+                <div class="flex-1 relative rounded-lg overflow-hidden bg-gray-50">
+                    <div class="aspect-[2/3] w-full">
+                         <img :src="mainImage" alt="{{ product.name }}" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="w-full md:w-1/2 px-4 md:px-0">
+            <p class="text-xs md:text-sm text-gray-500 mb-2 uppercase tracking-wide font-medium">{{ product.category.name }}</p>
+            <h1 class="text-2xl md:text-4xl page-heading font-bold text-gray-900 mb-2">{{ product.name }}</h1>
+
+            {% if product.product_code %}
+            <p class="text-xs text-gray-400 mb-4 md:mb-6">Code: {{ product.product_code }}</p>
+            {% endif %}
+
+            <span class="text-2xl md:text-3xl font-bold text-[#00695C] mb-6 md:mb-8 block"
+                  x-text="selectedVariant.price && selectedVariant.price !== 'N/A' ? '₹' + selectedVariant.price : 'Select Options'">
+            </span>
+
+            {% if available_colors %}
+            <div class="mb-6">
+                <h3 class="text-sm font-medium text-gray-900 mb-3">Color: <span x-text="selectedColor" class="font-bold"></span></h3>
+                <div class="flex flex-wrap gap-3">
+                    {% for color in available_colors %}
+                    <button @click="selectColor('{{ color.name }}')"
+                            type="button"
+                            class="px-4 py-2 border rounded-md text-sm transition-all duration-200 min-w-[3rem]"
+                            :class="selectedColor === '{{ color.name }}' ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-700 hover:border-gray-400'">
+                        {{ color.name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if available_sizes %}
+            <div class="mb-8">
+                <h3 class="text-sm font-medium text-gray-900 mb-3">Size: <span x-text="selectedSize" class="font-bold"></span></h3>
+                <div class="flex flex-wrap gap-3">
+                    {% for size in available_sizes %}
+                    <button @click="selectSize('{{ size.name }}')"
+                            type="button"
+                            class="w-10 h-10 md:w-12 md:h-12 border rounded-full flex items-center justify-center text-sm transition-all duration-200"
+                            :class="selectedSize === '{{ size.name }}' ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-700 hover:border-gray-400'">
+                        {{ size.name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="prose max-w-none mb-8 text-sm text-gray-600 border-t border-gray-100 pt-6 leading-relaxed">
+                <p>{{ product.description|linebreaks }}</p>
+            </div>
+
+            <form action="{% url 'add_to_cart' %}" method="POST" class="sticky bottom-0 bg-white pb-4 md:static md:bg-transparent md:pb-0 z-10 border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
+                {% csrf_token %}
+                <input type="hidden" name="variant_id" :value="selectedVariant.id">
+
+                <div class="flex flex-col sm:flex-row gap-4">
+
+                    <div class="w-full sm:w-24">
+                        <div class="relative flex items-center border border-gray-300 rounded-md overflow-hidden h-12">
+                            <span class="px-3 text-gray-500 bg-gray-50 h-full flex items-center border-r text-sm font-medium">Qty</span>
+                            <input type="number" name="quantity" value="1" min="1" :max="selectedVariant.stock"
+                                   class="w-full h-full text-center focus:outline-none text-gray-900 font-medium"
+                                   :disabled="!selectedVariant.id || selectedVariant.stock === 0">
+                        </div>
+                    </div>
+
+                    <div class="flex-grow flex flex-row gap-3">
+                        <button type="submit" name="action" value="add_to_cart"
+                                class="flex-1 bg-[#00695C] hover:bg-[#004D40] text-white font-bold h-12 px-2 sm:px-6 rounded-md text-sm sm:text-base transition duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 shadow-sm whitespace-nowrap"
+                                :disabled="!selectedVariant.id || selectedVariant.stock === 0">
+                            <span x-show="!selectedVariant.id">Select</span>
+                            <span x-show="selectedVariant.id && selectedVariant.stock > 0" style="display: none;" class="flex items-center gap-2">
+                                <i class="fa-solid fa-bag-shopping text-sm"></i> Add
+                            </span>
+                            <span x-show="selectedVariant.id && selectedVariant.stock === 0" style="display: none;">Out of Stock</span>
+                        </button>
+
+                        <button type="submit" name="action" value="buy_now"
+                                class="flex-1 bg-black hover:bg-gray-800 text-white font-bold h-12 px-2 sm:px-6 rounded-md text-sm sm:text-base transition duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 shadow-sm whitespace-nowrap"
+                                :disabled="!selectedVariant.id || selectedVariant.stock === 0"
+                                x-show="selectedVariant.id && selectedVariant.stock > 0" style="display: none;">
+                            <i class="fa-solid fa-bolt text-sm"></i> Buy Now
+                        </button>
+                    </div>
+                </div>
+
+                <p class="text-[#00695C] font-medium mt-3 text-sm" x-show="selectedVariant.id && selectedVariant.stock > 0 && selectedVariant.stock <= 10" style="display: none;">
+                    Hurry! Only <span x-text="selectedVariant.stock"></span> items left in stock.
+                </p>
+                <p class="text-red-600 font-medium mt-3 text-sm" x-show="selectedVariant.price === 'N/A'" style="display: none;">
+                    This combination is currently unavailable.
+                </p>
+            </form>
+
+            <div class="grid grid-cols-2 gap-4 mt-4 pt-6 border-t border-gray-100 pb-10 md:pb-0">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-truck-fast text-gray-400 text-xl"></i>
+                    <span class="text-xs font-medium text-gray-600">Fast Shipping</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-shield-halved text-gray-400 text-xl"></i>
+                    <span class="text-xs font-medium text-gray-600">Secure Payment</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if related_products %}
+    <div class="mt-12 md:mt-24 border-t border-gray-200 pt-12 px-4 md:px-0">
+        <div class="text-center mb-8 md:mb-12">
+            <p class="text-[#00695C] font-semibold tracking-[0.2em] text-xs mb-2 uppercase">Complete The Look</p>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 brand-font">You May Also Like</h2>
+            <div class="w-12 h-1 bg-[#00695C] mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {% for related in related_products %}
+            <div class="group relative bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div class="relative overflow-hidden">
+                    <a href="{% url 'product_detail' related.slug %}">
+                        {% if related.thumbnail %}
+                            <img src="{{ related.thumbnail.url }}" alt="{{ related.name }}" class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+                        {% else %}
+                            <div class="w-full aspect-[2/3] bg-gray-100 flex items-center justify-center text-gray-400">No Image</div>
+                        {% endif %}
+                    </a>
+                </div>
+                <div class="p-2 md:p-3 text-center">
+                    <h3 class="text-xs md:text-sm font-semibold text-gray-800 mb-1 truncate">
+                        <a href="{% url 'product_detail' related.slug %}">{{ related.name }}</a>
+                    </h3>
+                    {% if related.min_price %}
+                        <span class="text-xs md:text-sm font-bold text-[#00695C]">₹{{ related.min_price|floatformat:2 }}</span>
+                    {% else %}
+                        <span class="text-xs md:text-sm font-bold text-gray-400">Sold Out</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</section>
+{% endblock %}

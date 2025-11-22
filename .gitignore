@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# PyCharm
+.idea/
+
+# Node Modules (CRITICAL!)
+node_modules/
+theme/static_src/node_modules/
+
+# Database
+db.sqlite3
+
+# Media
+media/

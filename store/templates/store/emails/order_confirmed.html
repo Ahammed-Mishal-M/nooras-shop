@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; }
+        .header { background-color: #000; color: #fff; padding: 15px; text-align: center; }
+        .order-info { background-color: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; border-bottom: 2px solid #ddd; padding: 10px; }
+        td { border-bottom: 1px solid #eee; padding: 10px; }
+        .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; }
+        .footer { font-size: 12px; color: #777; text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; }
+        .btn { display: inline-block; background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Order Confirmed</h1>
+        </div>
+
+        <p>Hi <strong>{{ order.first_name }}</strong>,</p>
+        <p>Thank you for shopping with <strong>Noora's Ladies Wear</strong>! We have received your order and are getting it ready.</p>
+
+        <div class="order-info">
+            <p><strong>Order ID:</strong> #{{ order.order_id }}</p>
+            <p><strong>Date:</strong> {{ order.created_at|date:"d M Y" }}</p>
+            <p><strong>Payment Status:</strong> Paid ({{ order.payment_id }})</p>
+        </div>
+
+        <h3>Here is what you bought:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Variant</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.orderitem_set.all %}
+                <tr>
+                    <td>{{ item.variant.product.name }}</td>
+                    <td>{{ item.variant.color.name }} / {{ item.variant.size.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ item.subtotal }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total">
+            Total Paid: ₹{{ order.order_total }}
+        </div>
+
+        <h3>Shipping To:</h3>
+        <p>
+            {{ order.first_name }} {{ order.last_name }}<br>
+            {{ order.address_line_1 }}<br>
+            {% if order.address_line_2 %}{{ order.address_line_2 }}<br>{% endif %}
+            {{ order.city }}, {{ order.state }} - {{ order.pin_code }}<br>
+            Phone: {{ order.phone }}
+        </p>
+
+        <div style="text-align: center;">
+            <a href="http://127.0.0.1:8000/my-orders/" class="btn">View Your Order</a>
+        </div>
+
+        <div class="footer">
+            <p>Need help? Reply to this email or contact us at +91 98765 43210.</p>
+            <p>&copy; 2025 Noora's Ladies Wear.</p>
+        </div>
+    </div>
+</body>
+</html>

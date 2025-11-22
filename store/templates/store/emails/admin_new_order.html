@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; background-color: #fff; }
+        .alert-box { background-color: #e0f2fe; border-left: 4px solid #0284c7; padding: 15px; margin-bottom: 20px; }
+        .details { margin: 20px 0; }
+        .btn { display: inline-block; background-color: #dc2626; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="alert-box">
+            <h3>🔔 New Order Received!</h3>
+            <p>A customer has just placed a new order.</p>
+        </div>
+
+        <div class="details">
+            <p><strong>Customer:</strong> {{ order.first_name }} {{ order.last_name }}</p>
+            <p><strong>Order ID:</strong> #{{ order.order_id }}</p>
+            <p><strong>Amount Paid:</strong> ₹{{ order.order_total }}</p>
+            <p><strong>Items:</strong> {{ order.orderitem_set.count }}</p>
+        </div>
+
+        <p>Click the button below to view details and print the invoice:</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ admin_url }}" class="btn">Manage Order in Admin Panel</a>
+        </div>
+
+        <p style="font-size: 12px; color: #888;">
+            You are receiving this email because you are the administrator of Noora's Ladies Wear.
+        </p>
+    </div>
+</body>
+</html>

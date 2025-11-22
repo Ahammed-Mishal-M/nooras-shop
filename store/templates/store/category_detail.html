@@ -1,0 +1,132 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="bg-white" x-data="{ filterOpen: false }">
+
+    <div class="relative z-50" role="dialog" aria-modal="true" x-show="filterOpen" style="display: none;">
+        <div class="fixed inset-0 bg-black bg-opacity-25 transition-opacity" x-show="filterOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" aria-hidden="true" @click="filterOpen = false"></div>
+        <div class="fixed inset-0 z-40 flex">
+            <div class="relative ml-auto flex h-full w-full max-w-xs flex-col overflow-y-auto bg-white py-4 pb-12 shadow-xl" x-show="filterOpen" x-transition:enter="transition ease-in-out duration-300 transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
+                <div class="flex items-center justify-between px-4">
+                    <h2 class="text-lg font-medium text-gray-900">Filters</h2>
+                    <button type="button" class="-mr-2 flex h-10 w-10 items-center justify-center rounded-md bg-white p-2 text-gray-400" @click="filterOpen = false">
+                        <span class="sr-only">Close menu</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form class="mt-4 border-t border-gray-200" method="GET" action=".">
+                    <div class="px-4 py-6">
+                        <div class="mb-6">
+                            <h3 class="text-sm font-medium text-gray-900 mb-3">Price Range</h3>
+                            <div class="flex items-center space-x-2">
+                                <input type="number" name="min_price" placeholder="Min" value="{{ selected_min_price|default:'' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-black focus:ring-black">
+                                <span class="text-gray-500">-</span>
+                                <input type="number" name="max_price" placeholder="Max" value="{{ selected_max_price|default:'' }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-black focus:ring-black">
+                            </div>
+                        </div>
+                        <div class="mb-6 border-t border-gray-200 pt-6">
+                            <h3 class="text-sm font-medium text-gray-900 mb-3">Size</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center"><input id="size-all" name="size" value="" type="radio" {% if not selected_size %}checked{% endif %} class="h-4 w-4 border-gray-300 text-black focus:ring-black"><label for="size-all" class="ml-3 text-sm text-gray-600">All Sizes</label></div>
+                                {% for size in all_sizes %}
+                                <div class="flex items-center"><input id="size-{{ size.id }}" name="size" value="{{ size.name }}" type="radio" {% if selected_size == size.name %}checked{% endif %} class="h-4 w-4 border-gray-300 text-black focus:ring-black"><label for="size-{{ size.id }}" class="ml-3 text-sm text-gray-600">{{ size.name }}</label></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-6 border-t border-gray-200 pt-6">
+                            <h3 class="text-sm font-medium text-gray-900 mb-3">Color</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center"><input id="color-all" name="color" value="" type="radio" {% if not selected_color %}checked{% endif %} class="h-4 w-4 border-gray-300 text-black focus:ring-black"><label for="color-all" class="ml-3 text-sm text-gray-600">All Colors</label></div>
+                                {% for color in all_colors %}
+                                <div class="flex items-center"><input id="color-{{ color.id }}" name="color" value="{{ color.name }}" type="radio" {% if selected_color == color.name %}checked{% endif %} class="h-4 w-4 border-gray-300 text-black focus:ring-black"><label for="color-{{ color.id }}" class="ml-3 text-sm text-gray-600">{{ color.name }}</label></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 sticky bottom-0">
+                        <button type="submit" class="w-full bg-black text-white font-bold py-3 rounded-md hover:bg-gray-800 transition">Show Results</button>
+                        {% if selected_min_price or selected_max_price or selected_size or selected_color %}<a href="{% url 'category_detail' category.slug %}" class="block text-center w-full text-sm text-red-600 mt-3 hover:underline">Clear All Filters</a>{% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex items-baseline justify-between border-b border-gray-200 pb-6 pt-12">
+            <div>
+                <h1 class="text-4xl font-bold tracking-tight text-gray-900 page-heading">{{ category.name }}</h1>
+                {% if category.description %}<p class="mt-2 text-sm text-gray-500">{{ category.description }}</p>{% endif %}
+            </div>
+            <div class="flex items-center">
+                <button type="button" class="-m-2 ml-4 p-2 text-gray-700 hover:text-gray-500 sm:ml-6 flex items-center font-medium" @click="filterOpen = true">
+                    <span class="mr-2">Filters</span>
+                    <svg class="h-5 w-5" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <section aria-labelledby="products-heading" class="pb-24 pt-6">
+            {% if selected_min_price or selected_max_price or selected_size or selected_color %}
+            <div class="flex flex-wrap gap-2 mb-6">
+                {% if selected_size %}<span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">Size: {{ selected_size }}</span>{% endif %}
+                {% if selected_color %}<span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">Color: {{ selected_color }}</span>{% endif %}
+                {% if selected_min_price %}<span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">Min: ₹{{ selected_min_price }}</span>{% endif %}
+                <a href="{% url 'category_detail' category.slug %}" class="text-sm text-red-600 hover:underline flex items-center ml-2">Clear all</a>
+            </div>
+            {% endif %}
+
+            {% if products %}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                {% for product in products %}
+                <div class="group relative bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <div class="relative overflow-hidden">
+                        <a href="{% url 'product_detail' product.slug %}">
+                            {% if product.thumbnail %}
+                                <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}"
+                                     class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-110">
+                            {% else %}
+                                <div class="w-full aspect-[2/3] bg-gray-100 flex items-center justify-center text-gray-400">No Image</div>
+                            {% endif %}
+                        </a>
+                        <div class="absolute top-2 right-2 md:top-3 md:right-3 flex flex-col space-y-2 translate-x-10 group-hover:translate-x-0 transition-transform duration-300">
+                            <a href="{% url 'product_detail' product.slug %}" class="bg-white p-2 rounded-full shadow-md text-gray-700 hover:bg-[#00695C] hover:text-white transition-colors duration-300">
+                                <i class="fa-solid fa-eye text-xs md:text-sm"></i>
+                            </a>
+                        </div>
+                        <div class="hidden md:block absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <a href="{% url 'product_detail' product.slug %}" class="block w-full bg-white bg-opacity-95 text-gray-900 font-bold py-3 text-center text-sm tracking-wide hover:bg-[#00695C] hover:text-white transition-colors shadow-lg rounded-sm border border-gray-100">
+                                VIEW OPTIONS
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-3 md:p-4 text-center">
+                        <h3 class="text-sm md:text-base page-heading font-semibold text-gray-800 mb-1 md:mb-2 truncate">
+                            <a href="{% url 'product_detail' product.slug %}"><span aria-hidden="true" class="absolute inset-0"></span>{{ product.name }}</a>
+                        </h3>
+                        {% if product.min_price %}
+                            <span class="text-sm md:text-lg font-bold text-[#00695C]">₹{{ product.min_price|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="text-sm md:text-lg font-bold text-red-500">Out of Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-20">
+                <div class="mb-4"><i class="fa-solid fa-filter-circle-xmark text-4xl text-gray-300"></i></div>
+                <h3 class="mt-2 text-sm font-semibold text-gray-900">No products found</h3>
+                <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or clear them to see all products.</p>
+                <div class="mt-6"><a href="{% url 'category_detail' category.slug %}" class="inline-flex items-center rounded-md bg-black px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800">Clear all filters</a></div>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+{% endblock %}
