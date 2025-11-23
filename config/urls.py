@@ -5,20 +5,14 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # Store App
     path('', include('store.urls')),
-
-    # Accounts App (Login/Register)
     path('accounts/', include('accounts.urls')),
 ]
 
-# --- THE FIX: Add Browser Reload URLs ---
-# This handles the auto-refresh logic.
+# Serve media files in development
 if settings.DEBUG:
-    urlpatterns += [
-        path("__reload__/", include("django_browser_reload.urls")),
-    ]
-
-    # Serve media files in development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Only add the reload URL if we are in DEBUG mode (Local)
+if settings.DEBUG and 'django_browser_reload' in settings.INSTALLED_APPS:
+    urlpatterns += [path("__reload__/", include("django_browser_reload.urls"))]
