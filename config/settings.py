@@ -70,9 +70,7 @@ else:
 # --- APPLICATION DEFINITION ---
 
 INSTALLED_APPS = [
-    # Jazzmin must be top
     'jazzmin',
-
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -80,12 +78,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third Party
+    # --- ADD THESE 5 LINES FOR GOOGLE LOGIN ---
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    # ------------------------------------------
+
     'tailwind',
     'theme',
-    # Note: django_browser_reload is added conditionally below!
-
-    # Local Apps
     'store',
     'accounts',
 ]
@@ -95,6 +97,8 @@ TAILWIND_APP_NAME = 'theme'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+# --- ADD THIS LINE ---
+    'allauth.account.middleware.AccountMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -226,3 +230,21 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success"
     }
 }
+
+SITE_ID = 1
+
+# --- AUTHENTICATION & GOOGLE SETTINGS ---
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+# --- ADD THIS LINE ---
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+# This tells Allauth: "Trust the email from Google, don't verify it again."
