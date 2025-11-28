@@ -2,119 +2,188 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice #{{ order.order_id }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Shipping Label #{{ order.order_id }}</title>
     <style>
+        /* This CSS is specifically tuned for 4x6 inch thermal labels.
+           The @media print block ensures the browser respects the label size.
+        */
         @media print {
-            @page { margin: 0; size: auto; }
-            body { margin: 1.6cm; -webkit-print-color-adjust: exact; }
-            .no-print { display: none !important; }
-            .print-border { border: 1px solid #000 !important; }
+            @page {
+                size: 100mm 150mm; /* Standard 4x6 inch label size */
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 2mm; /* Small padding to prevent cutting off text */
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Monospace is clearer for logistics */
+            width: 380px; /* Approx 4 inches / 100mm for screen preview */
+            margin: 0 auto;
+            background-color: white;
+            color: black;
+        }
+
+        .container {
+            border: 2px solid black;
+            padding: 5px;
+            min-height: 540px; /* Fill the height for preview */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid black;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .shop-name {
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+        }
+
+        .order-id {
+            font-size: 14px;
+            margin-top: 2px;
+            font-weight: bold;
+        }
+
+        .shipping-address {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-bottom: 1px dashed black;
+        }
+
+        .label-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 2px;
+        }
+
+        .customer-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        .address-text {
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
+        .product-list {
+            padding: 5px 0;
+            margin: 5px 0;
+            font-size: 11px;
+            flex-grow: 1;
+        }
+
+        .product-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .footer {
+            font-size: 10px;
+            text-align: left;
+            margin-top: auto;
+            border-top: 2px solid black;
+            padding-top: 5px;
+        }
+
+        .print-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #000;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-family: sans-serif;
+            font-weight: bold;
+            border: none;
+            font-size: 16px;
+        }
+
+        .print-btn:hover {
+            background: #333;
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 text-sm">
+<body>
 
     <!-- Print Button (Visible only on screen) -->
-    <div class="max-w-3xl mx-auto mt-6 mb-6 no-print text-right">
-        <button onclick="window.print()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 transition">
-            Print Invoice
-        </button>
-        <button onclick="window.close()" class="ml-4 bg-gray-300 text-gray-800 px-6 py-2 rounded font-bold hover:bg-gray-400 transition">
-            Close
-        </button>
-    </div>
+    <button onclick="window.print()" class="print-btn no-print">🖨️ PRINT LABEL (4x6)</button>
 
-    <!-- Invoice Paper -->
-    <div class="max-w-3xl mx-auto bg-white p-8 shadow-lg print:shadow-none print:w-full print:max-w-none">
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="shop-name">NOORA'S LADIES WEAR</div>
+            <div class="order-id">ORDER #: {{ order.order_id }}</div>
+            <div style="font-size: 12px; margin-top: 2px;">
+                Date: {{ order.created_at|date:"d M Y" }}
+            </div>
+        </div>
 
-        <!-- Header -->
-        <div class="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
+        <!-- SHIP TO ADDRESS -->
+        <div class="shipping-address">
+            <div class="label-title">SHIP TO:</div>
+            <div class="customer-name">{{ order.first_name }} {{ order.last_name }}</div>
+            <div class="address-text">
+                {{ order.address_line_1 }}<br>
+                {% if order.address_line_2 %}{{ order.address_line_2 }}<br>{% endif %}
+                {{ order.city }}, {{ order.state }}<br>
+                <strong>PIN: {{ order.pin_code }}</strong><br>
+                Phone: <strong>{{ order.phone }}</strong>
+            </div>
+        </div>
+
+        <!-- ORDER CONTENTS (For Packing Reference) -->
+        <div class="product-list">
+            <div class="label-title">CONTENTS:</div>
+            {% for item in order.orderitem_set.all %}
+            <div class="product-row">
+                <span style="width: 10%;">{{ item.quantity }} x</span>
+                <span style="width: 60%;">{{ item.variant.product.name|truncatechars:20 }}</span>
+                <span style="width: 30%; text-align: right;">({{ item.variant.size }}/{{ item.variant.color.name }})</span>
+            </div>
+            {% endfor %}
+            <div style="margin-top: 5px; font-weight: bold; text-align: right;">
+                TOTAL VALUE: ₹{{ order.order_total }}
+            </div>
+        </div>
+
+        <!-- RETURN ADDRESS -->
+        <div class="footer">
+            <div class="label-title">IF UNDELIVERED, RETURN TO:</div>
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 uppercase tracking-wide">Noora's</h1>
-                <p class="text-gray-500 font-semibold tracking-widest uppercase text-xs">Ladies Wear</p>
-            </div>
-            <div class="text-right">
-                <h2 class="text-2xl font-bold text-gray-400 uppercase">Invoice</h2>
-                <p class="font-medium mt-1">#{{ order.order_id }}</p>
-                <p class="text-gray-500 text-xs mt-1">Date: {{ order.created_at|date:"d M Y" }}</p>
+                <strong>Noora's Ladies Wear</strong><br>
+                [Your Shop Address Line 1]<br>
+                [Your Shop Address Line 2]<br>
+                Kerala, India - [Your Pin Code]<br>
+                Ph: +91 98765 43210
             </div>
         </div>
-
-        <!-- Addresses -->
-        <div class="flex justify-between mb-8">
-            <div class="w-1/2 pr-4">
-                <h3 class="font-bold text-gray-900 mb-2 uppercase text-xs">Bill To:</h3>
-                <p class="font-semibold text-lg">{{ order.first_name }} {{ order.last_name }}</p>
-                <p>{{ order.address_line_1 }}</p>
-                {% if order.address_line_2 %}<p>{{ order.address_line_2 }}</p>{% endif %}
-                <p>{{ order.city }}, {{ order.state }} - {{ order.pin_code }}</p>
-                <p class="mt-2 text-gray-600">Ph: {{ order.phone }}</p>
-                <p class="text-gray-600">Email: {{ order.email }}</p>
-            </div>
-            <div class="w-1/2 pl-4 text-right">
-                <h3 class="font-bold text-gray-900 mb-2 uppercase text-xs">Shipped From:</h3>
-                <p class="font-semibold text-lg">Noora's Ladies Wear</p>
-                <p>123, Fashion Street</p>
-                <p>Near Grand Market</p>
-                <p>Kozhikode, Kerala - 673001</p>
-                <p class="mt-2 text-gray-600">Ph: +91 98765 43210</p>
-            </div>
-        </div>
-
-        <!-- Order Table -->
-        <table class="w-full mb-8 border-collapse">
-            <thead>
-                <tr class="bg-gray-100 border-b border-gray-300">
-                    <th class="text-left py-3 px-4 font-bold uppercase text-xs text-gray-600">Item</th>
-                    <th class="text-left py-3 px-4 font-bold uppercase text-xs text-gray-600">Color / Size</th>
-                    <th class="text-center py-3 px-4 font-bold uppercase text-xs text-gray-600">Qty</th>
-                    <th class="text-right py-3 px-4 font-bold uppercase text-xs text-gray-600">Price</th>
-                    <th class="text-right py-3 px-4 font-bold uppercase text-xs text-gray-600">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in order.orderitem_set.all %}
-                <tr class="border-b border-gray-200">
-                    <td class="py-3 px-4 font-medium">{{ item.variant.product.name }}</td>
-                    <td class="py-3 px-4 text-gray-600 text-xs">{{ item.variant.color.name }} / {{ item.variant.size.name }}</td>
-                    <td class="py-3 px-4 text-center">{{ item.quantity }}</td>
-                    <td class="py-3 px-4 text-right">₹{{ item.price }}</td>
-                    <td class="py-3 px-4 text-right font-medium">₹{{ item.subtotal }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- Totals -->
-        <div class="flex justify-end mb-12">
-            <div class="w-1/2 lg:w-1/3">
-                <div class="flex justify-between mb-2 text-gray-600">
-                    <span>Subtotal</span>
-                    <span>₹{{ order.order_total }}</span>
-                </div>
-                <div class="flex justify-between mb-2 text-gray-600">
-                    <span>Shipping</span>
-                    <span>₹0.00</span>
-                </div>
-                <div class="flex justify-between border-t-2 border-gray-800 pt-2 mt-2">
-                    <span class="font-bold text-lg">Total</span>
-                    <span class="font-bold text-lg">₹{{ order.order_total }}</span>
-                </div>
-                <div class="text-right mt-2 text-xs text-gray-500">
-                    (Paid via {% if order.payment_id %}Razorpay{% else %}Manual{% endif %})
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="border-t border-gray-200 pt-6 text-center">
-            <p class="text-gray-600 font-medium mb-1">Thank you for your business!</p>
-            <p class="text-xs text-gray-400">For questions about this order, please contact us at support@nooras.com</p>
-        </div>
-
     </div>
 
+    <script>
+        // Optional: Auto-trigger print on load for faster workflow
+        // window.onload = function() { window.print(); }
+    </script>
 </body>
 </html>
