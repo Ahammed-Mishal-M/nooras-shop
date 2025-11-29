@@ -287,8 +287,17 @@ def remove_from_cart(request, variant_id):
             request.session['cart'] = cart
 
     messages.success(request, "Item removed.")
-    return redirect('cart_detail')
 
+    # --- NEW REDIRECT LOGIC ---
+    # Check where the user clicked the button from
+    referer = request.META.get('HTTP_REFERER')
+
+    # If they were on the Checkout page, send them back to Checkout
+    if referer and 'checkout' in referer:
+        return redirect('checkout')
+
+    # Otherwise, go back to the Cart page (default behavior)
+    return redirect('cart_detail')
 
 # ---------------------------------------------------------
 # 4. CHECKOUT
@@ -296,41 +305,76 @@ def remove_from_cart(request, variant_id):
 
 @login_required
 def checkout(request):
-    # 1. Get Cart Items
+    # --- 1. NEW: Merge Session Cart to Database Cart ---
+    # When a guest logs in and lands here, we move their session items to the DB
+    session_cart = request.session.get('cart', {})
+
+    if session_cart:
+        for variant_id_str, quantity in session_cart.items():
+            try:
+                variant_id = int(variant_id_str)
+                variant = ProductVariant.objects.get(id=variant_id)
+
+                # Get or Create the item in the user's DB cart
+                cart_item, created = CartItem.objects.get_or_create(
+                    user=request.user,
+                    variant=variant
+                )
+
+                if created:
+                    cart_item.quantity = int(quantity)
+                else:
+                    # If item already exists in DB, add the session quantity to it
+                    cart_item.quantity += int(quantity)
+
+                # Ensure we don't exceed stock
+                if cart_item.quantity > variant.stock:
+                    cart_item.quantity = variant.stock
+
+                cart_item.save()
+            except ProductVariant.DoesNotExist:
+                continue
+
+        # Clear the session cart now that it's saved to DB
+        request.session['cart'] = {}
+        request.session.modified = True
+    # ---------------------------------------------------
+
+    # 2. Get Cart Items (Now fetching the merged items)
     cart_items = CartItem.objects.filter(user=request.user)
     count = cart_items.count()
 
     if count <= 0:
+        messages.warning(request, "Your cart is empty.")
         return redirect('home')
 
-    # 2. Calculate Total
+    # 3. Calculate Total
     total = Decimal('0.00')
     for item in cart_items:
         total += (item.variant.price * item.quantity)
 
-    # 3. Handle Form Submission
+    # 4. Handle Form Submission
     if request.method == 'POST':
         form = OrderForm(request.POST)
         if form.is_valid():
-            # Save Order data (but don't commit to DB yet)
             data = form.save(commit=False)
             data.user = request.user
             data.order_total = total
             data.ip = request.META.get('REMOTE_ADDR')
-            data.save()  # Now it has an ID
+            data.save()
 
-            # --- Generate Order Number (Optional cosmetic step) ---
+            # Generate Order Number
             import datetime
             yr = int(datetime.date.today().strftime('%Y'))
             dt = int(datetime.date.today().strftime('%d'))
             mt = int(datetime.date.today().strftime('%m'))
             d = datetime.date(yr, mt, dt)
-            current_date = d.strftime("%Y%m%d")  # 20251119
+            current_date = d.strftime("%Y%m%d")
             order_number = current_date + str(data.id)
             data.order_id = order_number
             data.save()
 
-            # --- Move Cart Items to Order Items ---
+            # Move Cart Items to Order Items
             for item in cart_items:
                 order_item = OrderItem()
                 order_item.order = data
@@ -339,13 +383,15 @@ def checkout(request):
                 order_item.quantity = item.quantity
                 order_item.save()
 
-            # NOTE: We do NOT clear the cart yet.
-            # We only clear the cart after successful payment.
-
-            # Redirect to a "Payment" view
             return redirect('payment', order_id=data.order_id)
     else:
-        form = OrderForm()
+        # Pre-fill form with user data if available (Optional User Profile logic could go here)
+        initial_data = {
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'email': request.user.email
+        }
+        form = OrderForm(initial=initial_data)
 
     context = {
         'form': form,
@@ -353,7 +399,6 @@ def checkout(request):
         'total': total,
     }
     return render(request, 'store/checkout.html', context)
-
 
 # ---------------------------------------------------------
 # 5. PAYMENT & ORDER MANAGEMENT
