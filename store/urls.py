@@ -17,4 +17,10 @@ urlpatterns = [
     # --- THE FIX IS HERE ---
     # We changed the path from 'admin/invoice/...' to 'print-invoice/...'
     path('print-invoice/<int:order_id>/', views.admin_order_invoice, name='admin_order_invoice'),
+
+
+    path('terms-and-conditions/', views.terms_conditions, name='terms_conditions'),
+    path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
+    path('refund-policy/', views.refund_policy, name='refund_policy'),
+    path('shipping-policy/', views.shipping_policy, name='shipping_policy'),
 ]

@@ -553,3 +553,20 @@ def my_orders(request):
 def admin_order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'store/admin_invoice.html', {'order': order})
+
+
+# ---------------------------------------------------------
+# 6. LEGAL PAGES
+# ---------------------------------------------------------
+
+def terms_conditions(request):
+    return render(request, 'store/legal/terms.html')
+
+def privacy_policy(request):
+    return render(request, 'store/legal/privacy.html')
+
+def refund_policy(request):
+    return render(request, 'store/legal/refund_policy.html')
+
+def shipping_policy(request):
+    return render(request, 'store/legal/shipping_policy.html')
