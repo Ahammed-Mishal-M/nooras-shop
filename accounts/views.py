@@ -1,13 +1,13 @@
 # accounts/views.py
-
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from .forms import CustomUserCreationForm
-from store.models import ProductVariant, CartItem  # Import these!
+from django.contrib.auth.models import User
+from .forms import SimpleSignupForm
+from store.models import ProductVariant, CartItem
 
-
+# --- YOUR EXISTING MERGE FUNCTION ---
 def merge_cart(request, user):
     """
     Helper function to merge Session Cart into Database Cart.
@@ -15,24 +15,23 @@ def merge_cart(request, user):
     session_cart = request.session.get('cart', {})
 
     for variant_id, quantity in session_cart.items():
-        variant = ProductVariant.objects.get(id=variant_id)
+        try:
+            variant = ProductVariant.objects.get(id=variant_id)
+            # Check if this user already has this item in DB
+            cart_item, created = CartItem.objects.get_or_create(
+                user=user,
+                variant=variant
+            )
+            if not created:
+                cart_item.quantity += quantity
+                cart_item.save()
+            else:
+                cart_item.quantity = quantity
+                cart_item.save()
+        except ProductVariant.DoesNotExist:
+            continue
 
-        # Check if this user already has this item in DB
-        cart_item, created = CartItem.objects.get_or_create(
-            user=user,
-            variant=variant
-        )
-
-        if not created:
-            # If it exists in DB, add the session quantity to it
-            cart_item.quantity += quantity
-            cart_item.save()
-        else:
-            # If not, set the quantity
-            cart_item.quantity = quantity
-            cart_item.save()
-
-    # Clear the session cart after merging (since it's now in DB)
+    # Clear the session cart after merging
     request.session['cart'] = {}
 
 
@@ -40,6 +39,8 @@ def login_view(request):
     next_url = request.GET.get('next', None)
 
     if request.method == 'POST':
+        # AuthenticationForm works with our EmailBackend automatically.
+        # It expects a field named 'username' in the HTML, but we will label it 'Email'.
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
@@ -49,7 +50,7 @@ def login_view(request):
             merge_cart(request, user)
             # ---------------------------
 
-            messages.success(request, f"Welcome back, {user.username}!")
+            messages.success(request, f"Welcome back, {user.first_name}!")
 
             next_url_post = request.POST.get('next', None)
             if next_url_post:
@@ -65,28 +66,42 @@ def register(request):
     next_url = request.GET.get('next', None)
 
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
+        form = SimpleSignupForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
+            # 1. Get cleaned data
+            first_name = form.cleaned_data['first_name']
+            last_name = form.cleaned_data['last_name']
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
 
-            # --- MERGE SESSION TO DB ---
+            # 2. Create User manually
+            # NOTE: We use email as the username to ensure uniqueness.
+            # Using first_name as username would crash if two "Johns" signed up.
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+
+            # 3. Log the user in immediately
+            # We specify the backend to ensure Django knows we logged in via Email
+            login(request, user, backend='accounts.backends.EmailBackend')
+
+            # 4. Merge Session Cart
             merge_cart(request, user)
-            # ---------------------------
 
-            messages.success(request, "Account created!")
+            messages.success(request, "Account created successfully!")
 
             next_url_post = request.POST.get('next', None)
             if next_url_post:
                 return redirect(next_url_post)
             return redirect('home')
     else:
-        form = CustomUserCreationForm()
+        form = SimpleSignupForm()
 
     return render(request, 'accounts/register.html', {'form': form, 'next': next_url})
-
-
-# ... (logout_view remains the same) ...
 
 
 def logout_view(request):

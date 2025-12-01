@@ -236,6 +236,7 @@ SITE_ID = 1
 # --- AUTHENTICATION & GOOGLE SETTINGS ---
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
+    'accounts.backends.EmailBackend',             # Your new Email Login
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
