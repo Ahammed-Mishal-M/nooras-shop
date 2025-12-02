@@ -13,7 +13,7 @@ Django==5.2.8
 django-allauth==65.13.1
 django-browser-reload==1.21.0
 django-jazzmin==3.0.1
-django-tailwind>=4.2.0,<4.5
+django-tailwind==4.4.1
 idna==3.11
 Jinja2==3.1.6
 markdown-it-py==4.0.0
@@ -22,10 +22,11 @@ mdurl==0.1.2
 mysqlclient==2.2.7
 oauthlib==3.3.1
 pillow==12.0.0
+pillow_heif==1.1.1
 pycparser==2.23
 Pygments==2.19.2
 PyJWT==2.10.1
-pytailwindcss>=0.2.0
+pytailwindcss==0.3.0
 python-dateutil==2.9.0.post0
 python-slugify==8.0.4
 PyYAML==6.0.3

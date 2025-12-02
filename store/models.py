@@ -11,6 +11,15 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
+# --- NEW IMPORTS FOR IMAGE COMPRESSION ---
+from PIL import Image, ImageOps
+from io import BytesIO
+from django.core.files import File
+import os
+
+# --- NEW ADDITION FOR HEIC SUPPORT ---
+import pillow_heif
+pillow_heif.register_heif_opener()
 
 # ... (Category model is unchanged) ...
 class Category(models.Model):
@@ -39,11 +48,47 @@ class Color(models.Model):
         return self.name
 
 
+def compress_image(image, filename):
+    """
+    Compresses an image to WebP format, resizes it if too large,
+    and returns a Django-friendly File object.
+    """
+    im = Image.open(image)
+
+    # 1. Handle Orientation (Fix rotation for iPhone photos)
+    im = ImageOps.exif_transpose(im)
+
+    # 2. Convert to RGB (Required for WebP/JPEG)
+    if im.mode in ('RGBA', 'P'):
+        im = im.convert('RGB')
+
+    # 3. Resize if too large (Max width 1200px is enough for e-commerce)
+    max_width = 1200
+    if im.width > max_width:
+        # Calculate new height to keep aspect ratio
+        ratio = max_width / float(im.width)
+        new_height = int((float(im.height) * float(ratio)))
+        im = im.resize((max_width, new_height), Image.Resampling.LANCZOS)
+
+    # 4. Save to BytesIO buffer as WebP
+    im_io = BytesIO()
+    # quality=85 is the sweet spot for e-commerce (sharp but small)
+    im.save(im_io, format='WEBP', quality=85, optimize=True)
+
+    # 5. Create a new filename with .webp extension
+    new_filename = os.path.splitext(filename)[0] + '.webp'
+
+    # 6. Return Django File object
+    new_image = File(im_io, name=new_filename)
+    return new_image
+
+
 class Product(models.Model):
     category = models.ForeignKey(Category, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True, blank=True, null=True)
-    is_featured = models.BooleanField(default=False,help_text="Check this to display this product in the 'Featured Collection' on the Homepage.")
+    is_featured = models.BooleanField(default=False,
+                                      help_text="Check this to display this product in the 'Featured Collection' on the Homepage.")
     product_code = models.CharField(
         max_length=50,
         unique=True,
@@ -52,6 +97,8 @@ class Product(models.Model):
         help_text="A unique code for this product (e.g., N-1001)"
     )
     description = models.TextField(blank=True, null=True)
+
+    # Updated Thumbnail Field
     thumbnail = models.ImageField(upload_to='product_thumbnails/', blank=True, null=True,
                                   help_text="This is the main image shown on product cards.")
 
@@ -63,6 +110,20 @@ class Product(models.Model):
             self.slug = slugify(self.name)
         if not self.product_code:
             self.product_code = f"N-{uuid.uuid4().hex[:6].upper()}"
+
+        # --- COMPRESSION LOGIC ---
+        if self.thumbnail:
+            # Check if this is a new upload (no pk) or the file has changed
+            try:
+                # Get old instance to compare
+                this = Product.objects.get(id=self.id)
+                if this.thumbnail != self.thumbnail:
+                    # File changed, compress the new one
+                    self.thumbnail = compress_image(self.thumbnail, self.thumbnail.name)
+            except Product.DoesNotExist:
+                # New product, compress immediately
+                self.thumbnail = compress_image(self.thumbnail, self.thumbnail.name)
+
         super().save(*args, **kwargs)
 
 
@@ -86,6 +147,18 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.product.name}"
+
+    def save(self, *args, **kwargs):
+        # --- COMPRESSION LOGIC ---
+        if self.image:
+            try:
+                this = ProductImage.objects.get(id=self.id)
+                if this.image != self.image:
+                    self.image = compress_image(self.image, self.image.name)
+            except ProductImage.DoesNotExist:
+                self.image = compress_image(self.image, self.image.name)
+
+        super().save(*args, **kwargs)
 
 
 class CartItem(models.Model):
